@@ -1,0 +1,34 @@
+
+`xprop` output (clicking on Google Chrome):
+```
+    XdndTypeList(ATOM) = STRING, UTF8_STRING, TEXT, chromium/x-renderer-taint, text/html, text/plain
+    _NET_WM_STATE(ATOM) = _NET_WM_STATE_MAXIMIZED_HORZ, _NET_WM_STATE_MAXIMIZED_VERT
+    WM_STATE(WM_STATE):
+            window state: Normal
+            icon window: 0x0
+    _NET_WM_DESKTOP(CARDINAL) = 0
+    _GTK_EDGE_CONSTRAINTS(CARDINAL) = 85
+    _NET_WM_ALLOWED_ACTIONS(ATOM) = _NET_WM_ACTION_MOVE, _NET_WM_ACTION_RESIZE, _NET_WM_ACTION_FULLSCREEN, _NET_WM_ACTION_MINIMIZE, _NET_WM_ACTION_MAXIMIZE_HORZ, _NET_WM_ACTION_MAXIMIZE_VERT, _NET_WM_ACTION_CHANGE_DESKTOP, _NET_WM_ACTION_CLOSE, _NET_WM_ACTION_ABOVE, _NET_WM_ACTION_BELOW
+    _NET_WM_USER_TIME(CARDINAL) = 60816562
+    WM_NORMAL_HINTS(WM_SIZE_HINTS):
+            program specified location: 66, 32
+            program specified minimum size: 619 by 122
+            window gravity: Static
+    _NET_WM_OPAQUE_REGION(CARDINAL) = 0, 0, 2494, 1408
+    _MOTIF_WM_HINTS(_MOTIF_WM_HINTS) = 0x2, 0x0, 0x0, 0x0, 0x0
+    XdndAware(ATOM) = BITMAP
+    _NET_WM_ICON(CARDINAL) = 	Icon (128 x 128):
+        (not shown)
+
+    _NET_WM_BYPASS_COMPOSITOR(CARDINAL) = 2
+    _NET_WM_SYNC_REQUEST_COUNTER(CARDINAL) = 33554437
+    _GTK_HIDE_TITLEBAR_WHEN_MAXIMIZED(CARDINAL) = 1
+    WM_NAME(UTF8_STRING) = "ChatGPT - Google Chrome"
+    _NET_WM_NAME(UTF8_STRING) = "ChatGPT - Google Chrome"
+    WM_WINDOW_ROLE(STRING) = "browser"
+    WM_CLASS(STRING) = "google-chrome", "Google-chrome"
+    _NET_WM_WINDOW_TYPE(ATOM) = _NET_WM_WINDOW_TYPE_NORMAL
+    _NET_WM_PID(CARDINAL) = 4087
+    WM_CLIENT_MACHINE(STRING) = "erik-ZenBook-UX434FLC-UX434FL"
+    WM_PROTOCOLS(ATOM): protocols  WM_DELETE_WINDOW, _NET_WM_PING, _NET_WM_SYNC_REQUEST
+```

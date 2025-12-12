@@ -1,0 +1,76 @@
+plugins {
+	id 'java-library'
+}
+
+group = 'com.eriksandsten'
+version = '0.0.1-SNAPSHOT'
+description = 'Chrome DevTools Protocol utility library'
+
+java {
+	withSourcesJar()
+
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(24)
+	}
+}
+
+tasks.register('compileWHelper', Exec) {
+	group = "Other"
+	description = "Compile windowHelper utility library"
+
+	def scriptFile = fileTree(dir: ".", include: ['**/compile_whelper.sh'/*, 'compile_windowhelper.cmd'*/]).files.first()
+	def scriptDir = file(scriptFile).parent
+	workingDir scriptDir
+
+	if (System.getProperty("os.name").toLowerCase().contains("windows")) {
+		commandLine 'cmd', '/c', 'compile_whelper.cmd'
+	} else {
+		commandLine 'sh', 'compile_whelper.sh'
+	}
+}
+
+tasks.named('jar') {
+	archiveFileName = 'chromedtp.jar'
+	destinationDirectory = file("$projectDir")
+	dependsOn tasks.named('compileWHelper')
+
+	from(['wHelper.dll', 'libwHelper.so']) {
+		// Optional: specify the path inside the jar
+		into('/')
+	}
+}
+
+tasks.named('sourcesJar') {
+	archiveFileName = 'chromedtp-sources.jar'
+	destinationDirectory = file("$projectDir")
+	dependsOn tasks.named('jar')
+}
+
+tasks.named("clean") {
+	doLast {
+		["chromedtp.jar", "chromedtp-sources.jar", "wHelper.dll", "libwHelper.so"].each(fileName -> {
+			def libFile = file(fileName)
+
+			if (!libFile.exists()) {
+				logger.warn("File does not exist: $libFile")
+			} else {
+				delete libFile
+			}
+		});
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.java-websocket:Java-WebSocket:1.5.2'
+	implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.2'
+}
+
+/*
+tasks.named('test') {
+	useJUnitPlatform()
+}
+*/
