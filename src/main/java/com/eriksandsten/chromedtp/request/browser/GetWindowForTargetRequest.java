@@ -1,0 +1,29 @@
+package com.eriksandsten.chromedtp.request.browser;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.eriksandsten.chromedtp.request.BaseRequest;
+
+import java.util.Map;
+
+// TODO: fix "Received: {"id":1,"error":{"code":-32000,"message":"Browser window not found"}}" (ChromeConnection needs to be created every request)
+public class GetWindowForTargetRequest extends BaseRequest {
+    private final String targetId;
+    private final Boolean flatten;
+
+    public GetWindowForTargetRequest(String targetId, Boolean flatten) {
+        this.targetId = targetId;
+        this.flatten = flatten;
+    }
+
+    @Override
+    public String getJSON() throws JsonProcessingException {
+        return objectMapper.writeValueAsString(Map.of(
+                "id", 1,
+                "method", "Browser.getWindowForTarget",
+                "params", Map.of(
+                        "targetId", targetId,
+                        "flatten", flatten
+                )
+        ));
+    }
+}
