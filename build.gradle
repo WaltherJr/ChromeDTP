@@ -19,9 +19,9 @@ tasks.register('compileWHelper', Exec) {
 	description = "Compile windowHelper utility library"
 
 	if (System.getProperty("os.name").toLowerCase().contains("windows")) {
-		commandLine 'wsl', 'bash', '-lc', './compile_whelper_2.sh'
+		commandLine 'wsl', 'bash', '-lc', './compile_whelper.sh'
 	} else {
-		commandLine 'sh', './compile_whelper_2.sh'
+		commandLine 'sh', './compile_whelper.sh'
 	}
 }
 
