@@ -5,10 +5,10 @@ set -x
 
 JAVA_SOURCES_DIR=src/main/java
 CPP_SOURCES_DIR=src/main/java/com/eriksandsten/chromedtp/native/source
-USER_ROOT_DIR=$1
+USER_ROOT_DIR=$(wslpath "$(wslvar USERPROFILE)" 2>/dev/null || echo "$HOME")
 MINGW_ROOT_DIR=/usr/x86_64-w64-mingw32
 JDK_ROOT_DIR=$USER_ROOT_DIR/.jdks/corretto-24.0.2
-JAVAC_COMPILER=$(ls $JDK_ROOT_DIR/bin/javac*) #.exe on Windows, no extension on Linux
+JAVAC_COMPILER=$(ls $JDK_ROOT_DIR/bin/javac*) #.exe on Windows, no file extension on Linux
 
 cat << EOF
 ==============================================

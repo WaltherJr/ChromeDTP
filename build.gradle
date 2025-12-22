@@ -21,7 +21,7 @@ tasks.register('compileWHelper', Exec) {
 	if (System.getProperty("os.name").toLowerCase().contains("windows")) {
 		commandLine 'wsl', 'bash', '-lc', './compile_whelper_2.sh'
 	} else {
-		commandLine 'sh', "./compile_whelper_2.sh", "$System.env.HOME"
+		commandLine 'sh', './compile_whelper_2.sh'
 	}
 }
 
