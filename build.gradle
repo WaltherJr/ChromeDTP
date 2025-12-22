@@ -18,14 +18,10 @@ tasks.register('compileWHelper', Exec) {
 	group = "Other"
 	description = "Compile windowHelper utility library"
 
-	def scriptFile = fileTree(dir: ".", include: ['**/compile_whelper.sh'/*, 'compile_windowhelper.cmd'*/]).files.first()
-	def scriptDir = file(scriptFile).parent
-	workingDir scriptDir
-
 	if (System.getProperty("os.name").toLowerCase().contains("windows")) {
-		commandLine 'cmd', '/c', 'compile_whelper.cmd'
+		commandLine 'wsl', 'bash', '-lc', './compile_whelper_2.sh'
 	} else {
-		commandLine 'sh', 'compile_whelper.sh'
+		commandLine 'sh', "./compile_whelper_2.sh", "$System.env.HOME"
 	}
 }
 

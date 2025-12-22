@@ -13,7 +13,7 @@ using namespace std;
     wstring getWin32WindowTitle(HWND windowHandle) {
         wstring input;
         input.resize(GetWindowTextLengthW(windowHandle));
-        GetWindowTextW(windowHandle, input.data(), input.size() + 1); // Include null character
+        GetWindowTextW(windowHandle, (LPWSTR) input.data(), input.size() + 1); // Include null character
         return input;
     }
 
@@ -23,7 +23,7 @@ using namespace std;
 
     wstring getWin32WindowClassName(HWND windowHandle) {
         wstring str(512, L'\0');
-        int length = GetClassNameW(windowHandle, str.data(), str.size());
+        int length = GetClassNameW(windowHandle, (LPWSTR) str.data(), str.size());
         str.resize(length);
         return str;
     }

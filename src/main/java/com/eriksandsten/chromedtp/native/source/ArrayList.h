@@ -103,7 +103,7 @@ class ArrayList: public Object {
         #ifdef _WIN32
             ArrayList(JNIEnv* jniEnv, vector<HWND>& windowHandles): ArrayList(jniEnv) {
                 for (const HWND& windowHandle : windowHandles) {
-                    this->add(Integer(jniEnv, windowHandle).getObject());
+                    this->add(Integer<HWND>(jniEnv, windowHandle).getObject());
 
                 }
             }
