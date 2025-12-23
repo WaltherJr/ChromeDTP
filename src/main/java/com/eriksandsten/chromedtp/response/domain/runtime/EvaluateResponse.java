@@ -1,5 +1,9 @@
 package com.eriksandsten.chromedtp.response.domain.runtime;
 
+import com.eriksandsten.chromedtp.response.target.GetTargetsResponse;
+
+import java.util.List;
+
 public class EvaluateResponse {
     private Long id;
     private Result result;
@@ -30,10 +34,12 @@ public class EvaluateResponse {
     }
 
     public static class Result {
+        private String sessionId;
         private String type;
         private String className;
         private EvalResult result;
         private ExceptionDetails exceptionDetails;
+        private List<GetTargetsResponse.TargetInfo> targetInfos;
 
         public String getType() {
             return type;
@@ -41,6 +47,14 @@ public class EvaluateResponse {
 
         public void setType(String type) {
             this.type = type;
+        }
+
+        public String getSessionId() {
+            return sessionId;
+        }
+
+        public void setSessionId(String sessionId) {
+            this.sessionId = sessionId;
         }
 
         public String getClassName() {
@@ -65,6 +79,15 @@ public class EvaluateResponse {
 
         public void setExceptionDetails(ExceptionDetails exceptionDetails) {
             this.exceptionDetails = exceptionDetails;
+        }
+
+        // Populated sometimes, when sending EvaluateRequest and an already showed alert()-box is not closed yet inside target
+        public List<GetTargetsResponse.TargetInfo> getTargetInfos() {
+            return targetInfos;
+        }
+
+        public void setTargetInfos(List<GetTargetsResponse.TargetInfo> targetInfos) {
+            this.targetInfos = targetInfos;
         }
     }
 

@@ -1,9 +1,8 @@
-package com.eriksandsten.chromedtp.response.page;
+package com.eriksandsten.chromedtp.response.io;
 
-public class PrintToPDFResponse {
+public class ReadResponse {
     private Long id;
     private Result result;
-    private String sessionId;
 
     public Long getId() {
         return id;
@@ -21,18 +20,18 @@ public class PrintToPDFResponse {
         this.result = result;
     }
 
-    public String getSessionId() {
-        return sessionId;
-    }
-
-    public void setSessionId(String sessionId) {
-        this.sessionId = sessionId;
-    }
-
     public static class Result {
+        private Boolean base64Encoded;
         private String data;
-        private String stream;
+        private Boolean eof;
 
+        public Boolean getBase64Encoded() {
+            return base64Encoded;
+        }
+
+        public void setBase64Encoded(Boolean base64Encoded) {
+            this.base64Encoded = base64Encoded;
+        }
 
         public String getData() {
             return data;
@@ -42,12 +41,12 @@ public class PrintToPDFResponse {
             this.data = data;
         }
 
-        public String getStream() {
-            return stream;
+        public Boolean getEof() {
+            return eof;
         }
 
-        public void setStream(String stream) {
-            this.stream = stream;
+        public void setEof(Boolean eof) {
+            this.eof = eof;
         }
     }
 }

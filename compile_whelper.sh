@@ -23,7 +23,7 @@ cat << EOF
 ==============================================
 EOF
 OUTPUT_LIBRARY_FILE=wHelper.dll
-/usr/bin/x86_64-w64-mingw32-g++-win32 -D_WIN32 -static -shared -Wall -O2 -fPIC -o $OUTPUT_LIBRARY_FILE -I$MINGW_ROOT_DIR/include -I$JDK_ROOT_DIR/include/linux -I$JDK_ROOT_DIR/include/win32 -I$JDK_ROOT_DIR/include $CPP_SOURCES_DIR/JniUtils.cpp $CPP_SOURCES_DIR/windows/WHelper.cpp
+/usr/bin/x86_64-w64-mingw32-g++-win32 -static -shared -Wall -O2 -fPIC -o $OUTPUT_LIBRARY_FILE -I$MINGW_ROOT_DIR/include -I$JDK_ROOT_DIR/include/linux -I$JDK_ROOT_DIR/include/win32 -I$JDK_ROOT_DIR/include $CPP_SOURCES_DIR/JniUtils.cpp $CPP_SOURCES_DIR/windows/WHelper.cpp
 
 cat << EOF
 ==============================================

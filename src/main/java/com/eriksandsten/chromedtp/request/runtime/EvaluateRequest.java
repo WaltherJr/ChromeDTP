@@ -18,7 +18,7 @@ public class EvaluateRequest extends BaseRequest {
     public String getJSON() throws JsonProcessingException {
         return objectMapper.writeValueAsString(Map.of(
             "id", 1,
-            "sessionId", sessionId,
+            // "sessionId", sessionId,
             "method", "Runtime.evaluate",
             "params", Map.of(
                     "expression", expression

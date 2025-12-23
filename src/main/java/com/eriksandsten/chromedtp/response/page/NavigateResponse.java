@@ -33,6 +33,7 @@ public class NavigateResponse {
         private String frameId;
         private String loaderId;
         private String errorText;
+        private Boolean isDownload;
 
         public String getFrameId() {
             return frameId;
@@ -56,6 +57,14 @@ public class NavigateResponse {
 
         public void setErrorText(String errorText) {
             this.errorText = errorText;
+        }
+
+        public Boolean getIsDownload() {
+            return isDownload;
+        }
+
+        public void setIsDownload(Boolean download) {
+            isDownload = download;
         }
     }
 }

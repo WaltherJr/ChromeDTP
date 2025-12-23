@@ -7,7 +7,15 @@ public class GetTargetsResponse {
     private Result result;
 
     public static class Result {
+        private String sessionId;
         private List<TargetInfo> targetInfos;
+
+        public String getSessionId() {
+            return sessionId;
+        }
+        public void setSessionId(String sessionId) {
+            this.sessionId = sessionId;
+        }
 
         public List<TargetInfo> getTargetInfos() {
             return targetInfos;
@@ -43,6 +51,7 @@ public class GetTargetsResponse {
         private String openerId;
         private Boolean canAccessOpener;
         private String openerFrameId;
+        private String parentFrameId;
         private String browserContextId;
         private String subtype;
 
@@ -108,6 +117,14 @@ public class GetTargetsResponse {
 
         public void setOpenerFrameId(String openerFrameId) {
             this.openerFrameId = openerFrameId;
+        }
+
+        public String getParentFrameId() {
+            return parentFrameId;
+        }
+
+        public void setParentFrameId(String parentFrameId) {
+            this.parentFrameId = parentFrameId;
         }
 
         public String getBrowserContextId() {

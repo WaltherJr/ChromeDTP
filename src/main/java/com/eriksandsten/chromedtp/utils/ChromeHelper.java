@@ -12,7 +12,7 @@ public class ChromeHelper {
         ChromeHelper.radxaRockServerUrl = radxaRockServerUrl;
     }
 
-    public static void startNewChromeInstance(Integer remoteDebuggingPort, String userDataDirectory, boolean enableLogging, Map<String, String> additionalParams) {
+    public static void startNewChromeInstance(Integer remoteDebuggingPort, String userDataDirectory, boolean enableLogging, List<String> additionalParams) {
         try {
             String[] command = buildCommand(remoteDebuggingPort, userDataDirectory, enableLogging, additionalParams);
             final ProcessBuilder processBuilder = new ProcessBuilder(command);
@@ -24,7 +24,7 @@ public class ChromeHelper {
         }
     }
 
-    private static String[] buildCommand(Integer remoteDebuggingPort, String userDataDirectory, boolean enableLogging, Map<String, String> additionalParams) {
+    private static String[] buildCommand(Integer remoteDebuggingPort, String userDataDirectory, boolean enableLogging, List<String> additionalParams) {
         List<String> command = new ArrayList<>();
         command.add("chrome.exe");
 
@@ -38,7 +38,7 @@ public class ChromeHelper {
             command.add("--enable-logging");
         }
         if (additionalParams != null && !additionalParams.isEmpty()) {
-            additionalParams.entrySet().stream().forEach(entry -> command.add(entry.getKey() + "=" + entry.getValue()));
+            command.addAll(additionalParams);
         }
 
         return command.toArray(new String[0]);

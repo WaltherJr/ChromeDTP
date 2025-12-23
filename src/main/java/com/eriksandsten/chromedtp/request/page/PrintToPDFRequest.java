@@ -9,7 +9,7 @@ import java.util.Map;
 
 public class PrintToPDFRequest extends BaseRequest {
     private String sessionId;
-    private static final Map<String, Object> defaultParams = new HashMap<>();
+    private static final Map<String, Object> params = new HashMap<>();
     private Margins margins;
     public PrintToPDFRequest(String sessionId) {
         this.sessionId = sessionId;
@@ -17,28 +17,33 @@ public class PrintToPDFRequest extends BaseRequest {
 
     static {
         // "sessionId", this.sessionId
-        defaultParams.put("landscape", "false");
-        defaultParams.put("displayHeaderFooter", "false");
-        defaultParams.put("printBackground", "true");
-        defaultParams.put("scale", "1");
-        defaultParams.put("paperWidth", PageSize.A4.getWidth());
-        defaultParams.put("paperHeight", PageSize.A4.getHeight());
-        defaultParams.put("marginTop", 1);
-        defaultParams.put("marginBottom", 1);
-        defaultParams.put("marginLeft", 1);
-        defaultParams.put("marginRight", 1);
-        defaultParams.put("pageRanges", "");
-        defaultParams.put("headerTemplate", "");
-        defaultParams.put("footerTemplate", "");
-        defaultParams.put("preferCSSPageSize", "true");
-        defaultParams.put("transferMode", "ReturnAsBase64");
-        defaultParams.put("generateTaggedPDF", false);
-        defaultParams.put("generateDocumentOutline", false);
+        params.put("landscape", false);
+        params.put("displayHeaderFooter", false);
+        params.put("printBackground", true);
+        params.put("scale", 1);
+        params.put("paperWidth", PageSize.A4.getWidth());
+        params.put("paperHeight", PageSize.A4.getHeight());
+        params.put("marginTop", 0);
+        params.put("marginBottom", 0);
+        params.put("marginLeft", 0);
+        params.put("marginRight", 0);
+        params.put("pageRanges", "");
+        params.put("headerTemplate", "");
+        params.put("footerTemplate", "");
+        params.put("preferCSSPageSize", true);
+        params.put("transferMode", "ReturnAsStream");
+        params.put("generateTaggedPDF", false);
+        params.put("generateDocumentOutline", false);
     }
 
     @Override
     public String getJSON() throws JsonProcessingException {
-        return objectMapper.writeValueAsString(defaultParams);
+        return objectMapper.writeValueAsString(Map.of(
+            "id", 1,
+            // "sessionId", sessionId,
+            "method", "Page.printToPDF",
+        "params", params
+        ));
     }
 
     public record Margins(Double top, Double right, Double bottom, Double left) {}

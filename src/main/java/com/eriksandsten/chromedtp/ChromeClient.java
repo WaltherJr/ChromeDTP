@@ -1,7 +1,14 @@
 package com.eriksandsten.chromedtp;
 
 import com.eriksandsten.chromedtp.request.domain.target.TargetType;
+import com.eriksandsten.chromedtp.request.io.CloseRequest;
+import com.eriksandsten.chromedtp.request.io.ReadRequest;
+import com.eriksandsten.chromedtp.request.page.PrintToPDFRequest;
+import com.eriksandsten.chromedtp.response.io.ReadResponse;
+import com.eriksandsten.chromedtp.response.page.PrintToPDFResponse;
+import com.eriksandsten.chromedtp.utils.NewChromeSession;
 import com.eriksandsten.chromedtp.utils.WHelper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.eriksandsten.chromedtp.request.page.EnableRequest;
 import com.eriksandsten.chromedtp.request.page.NavigateRequest;
@@ -12,6 +19,9 @@ import com.eriksandsten.chromedtp.response.page.NavigateResponse;
 import com.eriksandsten.chromedtp.response.domain.runtime.EvaluateResponse;
 import com.eriksandsten.chromedtp.response.target.*;
 import com.eriksandsten.chromedtp.utils.ChromeHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.URI;
@@ -27,6 +37,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class ChromeClient {
+    private static final Logger logger = LoggerFactory.getLogger(ChromeClient.class);
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private WHelper wHelper = new WHelper();
 
@@ -35,17 +46,17 @@ public class ChromeClient {
     private final Integer remoteDebuggingPort;
     private final String userDataDirectory;
     private final Boolean enableLogging;
-    private final Map<String, String> additionalParams;
-    private ChromeDTPWebSocketClient chromeWSClient;
+    private final String initialUrl;
+    private final List<String> additionalParams;
     private ChromeSession currentSession;
 
-    // public ChromeClient(String applicationPageTitle, String chromeDevToolsJsonUrl, String chromeWindowClassName) {
-    public ChromeClient(String applicationPageTitle, String jsonAPIBaseUrl, Integer remoteDebuggingPort, String userDataDirectory, Boolean enableLogging, Map<String, String> additionalParams) {
+    public ChromeClient(String applicationPageTitle, String jsonAPIBaseUrl, Integer remoteDebuggingPort, String userDataDirectory, Boolean enableLogging, String initialUrl, List<String> additionalParams) {
         this.applicationPageTitle = applicationPageTitle;
         this.jsonAPIBaseUrl = jsonAPIBaseUrl;
         this.remoteDebuggingPort = remoteDebuggingPort;
         this.userDataDirectory = userDataDirectory;
         this.enableLogging = enableLogging;
+        this.initialUrl = initialUrl;
         this.additionalParams = additionalParams;
         /*
         this.applicationPageTitle = applicationPageTitle;
@@ -60,12 +71,13 @@ public class ChromeClient {
 
     public void loadPage(String url, boolean hasAttemptedToStartNewChrome) throws IOException, URISyntaxException, InterruptedException {
         try {
-            chromeWSClient = connectToChrome().webSocketClient();
-            final ChromeSession session = createNewOrGetExistingSession(url);
+            ChromeConnection chromeConnection = connectToChrome();
+            final ChromeSession session = getExistingSession();
             activateMediaServerChannelChromeWindow();
 
-            if (session.createdBrandNewSession()) {
+            if (session.sessionId() == null) {
                 // chromeWSClient.addCallback("Page.loadEventFired", (params) -> setSessionWindowTitle(session, url));
+                navigateToUrl(chromeConnection.browserTarget().getId(), url);
             } else {
                 // chromeWSClient.addCallback("Page.loadEventFired", (params) -> setSessionWindowTitle(session, url));
                 navigateToUrl(session.sessionId(), url);
@@ -73,7 +85,7 @@ public class ChromeClient {
         } catch (final ConnectException e) {
             if (!hasAttemptedToStartNewChrome) {
                 ChromeHelper.startNewChromeInstance(remoteDebuggingPort, userDataDirectory, enableLogging, additionalParams); // Attempt to start a new Chrome instance (only one time)
-                // createNewOrGetExistingSession(url); // Channel page could have been saved and now re-opened from the previous session - use it
+                // getExistingSession(url); // Channel page could have been saved and now re-opened from the previous session - use it
                 Thread.sleep(10000); // TODO: fix!
                 System.out.println("==================================== APA =======================================");
                 loadPage(url, true);
@@ -81,78 +93,102 @@ public class ChromeClient {
         }
     }
 
-    public Optional<EvaluateResponse> evaluateJavascript(String javascript) throws IOException, URISyntaxException, InterruptedException {
-        chromeWSClient = connectToChrome().webSocketClient();
-        return getExistingSession().map((session) -> {
-            EvaluateResponse evaluateResponse = (EvaluateResponse) chromeWSClient.executeCommand(
-                    new EvaluateRequest(session.sessionId(), javascript), EvaluateResponse.class);
+    public EvaluateResponse evaluateJavascript(String javascript) throws IOException, JsonProcessingException, InterruptedException, URISyntaxException, InterruptedException {
+        ChromeConnection chromeConnection = connectToChrome();
+        ChromeSession existingSession = getExistingSession();
 
+        if (existingSession != null) {
+            EvaluateResponse evaluateResponse = ChromeDTPWebSocketClient.executeCommand(new EvaluateRequest(existingSession.sessionId(), javascript), EvaluateResponse.class);
             return evaluateResponse;
-        });
-    }
-
-    private void navigateToUrl(String sessionId, String url) {
-        NavigateResponse navigateResponse = (NavigateResponse) chromeWSClient.executeCommand(new NavigateRequest(sessionId, url), NavigateResponse.class);
-        setSessionWindowTitle(sessionId, url);
-    }
-
-    private void setSessionWindowTitle(String sessionId, String url) {
-        // Allente sets the window title after some seconds, override it by setting it later
-        IntStream.range(0, 5).forEach(iteration -> {
-                // TODO: should iterate 3 times, bug with queue.take()
-                int a = iteration;
-                // Thread.sleep(1000);
-                EvaluateResponse setDocumentTitleResponse = (EvaluateResponse) chromeWSClient.executeCommand(
-                        new EvaluateRequest(sessionId, "document.title = '%s [%s]';".formatted(applicationPageTitle, url.substring(url.lastIndexOf("/")))), EvaluateResponse.class);
-
-        });
-    }
-
-    private Optional<ChromeSession> getExistingSession() {
-        final Optional<GetTargetsResponse.TargetInfo> existingChannelTarget = getExistingChannelTarget();
-
-        if (existingChannelTarget.isPresent()) {
-            final String sessionId = attachToAndActivateTarget(existingChannelTarget.get().getTargetId());
-            final EnableResponse enableResponse = (EnableResponse) chromeWSClient.executeCommand(new EnableRequest(sessionId), EnableResponse.class);
-
-            currentSession = new ChromeSession(sessionId, false);
-            return Optional.of(currentSession);
         } else {
-            return Optional.empty();
+            return null;
         }
     }
 
-    private ChromeSession createNewOrGetExistingSession(String url) {
-        final Optional<GetTargetsResponse.TargetInfo> existingChannelTarget = getExistingChannelTarget();
+    public PrintToPDFResponse printPDF() throws IOException, InterruptedException, URISyntaxException {
+        ChromeConnection chromeConnection = connectToChrome();
+        ChromeSession existingSession = getExistingSession();
 
-        final String targetId = existingChannelTarget.map(GetTargetsResponse.TargetInfo::getTargetId).orElseGet(() -> {
-            CreateTargetResponse createTargetResponse = (CreateTargetResponse) chromeWSClient.executeCommand(new CreateTargetRequest(url), CreateTargetResponse.class);
+        if (existingSession != null) {
+            PrintToPDFResponse printToPdfResponse = ChromeDTPWebSocketClient.executeCommand(new PrintToPDFRequest(existingSession.sessionId()), PrintToPDFResponse.class);
+            return printToPdfResponse;
+        } else {
+            return null;
+        }
+    }
+
+    public ReadResponse readIOStream(String streamHandle, Integer offset, Integer size) throws IOException, InterruptedException, URISyntaxException {
+        ChromeConnection chromeConnection = connectToChrome();
+        ChromeSession existingSession = getExistingSession();
+
+        if (existingSession != null) {
+            ReadResponse readResponse = ChromeDTPWebSocketClient.executeCommand(new ReadRequest(streamHandle, offset, size), ReadResponse.class);
+            return readResponse;
+        } else {
+            return null;
+        }
+    }
+
+    public void closeIOStream(String streamHandle) throws IOException, InterruptedException, URISyntaxException {
+        ChromeConnection chromeConnection = connectToChrome();
+        ChromeSession existingSession = getExistingSession();
+
+        if (existingSession != null) {
+            ChromeDTPWebSocketClient.executeCommand(new CloseRequest(streamHandle), ReadResponse.class);
+        }
+    }
+
+    private void navigateToUrl(String sessionId, String url) throws JsonProcessingException, InterruptedException {
+        NavigateResponse navigateResponse = ChromeDTPWebSocketClient.executeCommand(new NavigateRequest(sessionId, url), NavigateResponse.class);
+        setSessionWindowTitle(sessionId, url);
+    }
+
+    private void setSessionWindowTitle(String sessionId, String url) throws JsonProcessingException, InterruptedException {
+        // Allente sets the window title after some seconds, override it by setting it later
+        for (int i = 0; i <= 5; i++) {
+                EvaluateResponse setDocumentTitleResponse = ChromeDTPWebSocketClient.executeCommand(
+                        new EvaluateRequest(sessionId, "document.title = '%s [%s]';".formatted(applicationPageTitle, url.substring(url.lastIndexOf("/")))), EvaluateResponse.class);
+        }
+    }
+/*
+
+java.lang.NullPointerException: Cannot invoke "java.util.List.stream()" because the return value of "com.eriksandsten.chromedtp.response.target.GetTargetsResponse$Result.getTargetInfos()" is null
+	at com.eriksandsten.chromedtp.ChromeClient.getExistingPageTarget(ChromeClient.java:119) ~[chromedtp.jar:na]
+ */
+    private String getExistingPageTarget() throws JsonProcessingException, InterruptedException {
+        GetTargetsResponse getTargetsCommand = ChromeDTPWebSocketClient.executeCommand(new GetTargetsRequest(), GetTargetsResponse.class);
+
+        Optional<String> existingTarget = getTargetsCommand.getResult().getTargetInfos().stream()
+            .filter(target -> target.getType().equals(TargetType.PAGE.getType()) && target.getTitle().startsWith(applicationPageTitle))
+            .findFirst().map(GetTargetsResponse.TargetInfo::getTargetId);
+
+        if (existingTarget.isPresent()) {
+            return existingTarget.get();
+        } else {
+            CreateTargetResponse createTargetResponse = ChromeDTPWebSocketClient.executeCommand(new CreateTargetRequest(initialUrl), CreateTargetResponse.class);
             return createTargetResponse.getResult().getTargetId();
-        });
+        }
+    }
 
-        final String sessionId = attachToAndActivateTarget(targetId);
-        final EnableResponse enableResponse = (EnableResponse) chromeWSClient.executeCommand(new EnableRequest(sessionId), EnableResponse.class);
+    private ChromeSession getExistingSession() throws JsonProcessingException, InterruptedException {
+        final String existingPageTarget = getExistingPageTarget();
+        final ActivateTargetResponse activateTargetResponse = attachToAndActivateTarget(existingPageTarget);
+        final String sessionId = activateTargetResponse.getResult().getSessionId();
 
-        currentSession = new ChromeSession(sessionId, existingChannelTarget.isEmpty());
+        if (sessionId != null) {
+            final EnableResponse enableResponse = ChromeDTPWebSocketClient.executeCommand(new EnableRequest(sessionId), EnableResponse.class);
+        }
+
+        currentSession = new ChromeSession(sessionId, false);
         return currentSession;
     }
 
-    private String attachToAndActivateTarget(String targetId) {
-        final AttachToTargetResponse attachToTargetResponse = (AttachToTargetResponse) chromeWSClient.executeCommand(
+    private ActivateTargetResponse attachToAndActivateTarget(String targetId) throws JsonProcessingException, InterruptedException {
+        final AttachToTargetResponse attachToTargetResponse = ChromeDTPWebSocketClient.executeCommand(
                 new AttachToTargetRequest(targetId, true), AttachToTargetResponse.class);
 
         // Does not activate the Chrome window, only the tab
-        final ActivateTargetResponse activateTargetResponse = (ActivateTargetResponse)
-                chromeWSClient.executeCommand(new ActivateTargetRequest(targetId, true), ActivateTargetResponse.class);
-
-        return attachToTargetResponse.getResult().getSessionId();
-    }
-
-    private Optional<GetTargetsResponse.TargetInfo> getExistingChannelTarget() {
-        GetTargetsResponse getTargetsCommand = (GetTargetsResponse) chromeWSClient.executeCommand(new GetTargetsRequest(), GetTargetsResponse.class);
-
-        return getTargetsCommand.getResult().getTargetInfos().stream()
-                .filter(target -> target.getType().equals(TargetType.PAGE.getType()) && target.getTitle().startsWith(applicationPageTitle)).findFirst();
+        return ChromeDTPWebSocketClient.executeCommand(new ActivateTargetRequest(targetId, true), ActivateTargetResponse.class);
     }
 
     private void activateMediaServerChannelChromeWindow() {
@@ -176,7 +212,12 @@ public class ChromeClient {
                     bt.getTitle().startsWith(applicationPageTitle)).findFirst().orElseGet(() -> browserTargets[0]);
 
             final ChromeDTPWebSocketClient webSocketClient = new ChromeDTPWebSocketClient(browserTarget.getWebSocketDebuggerUrl());
-            webSocketClient.connectBlocking();
+
+            try {
+                ChromeDTPWebSocketClient.getSocketClient().connectBlocking();
+            } catch (IllegalStateException e) {
+                logger.warn("WebSocket client already connected");
+            }
 
             return new ChromeConnection(webSocketClient, browserTarget);
         }
